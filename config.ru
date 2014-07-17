@@ -4,7 +4,16 @@ $LOAD_PATH.unshift File.dirname(__FILE__)
 
 require 'batch_getter'
 
-Conf::MSP_API.tap do |msp_api|
-  puts msp_api
-  run BatchGetter.new msp_api unless msp_api.empty?
+if (prefix = Conf::COOKIE_REWRITE_PREFIX)
+  require 'rack/cookie_rewrite'
+  use Rack::CookieRewrite, prefix
+end
+
+api = Conf::API_ENDPOINT
+
+if api && !api.empty?
+  run BatchGetter.new api
+else
+  puts "Please define #{Conf::API_ENDPOINT_ENV_VAR}"
+  exit
 end

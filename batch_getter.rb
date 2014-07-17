@@ -5,7 +5,10 @@ require 'rest_client'
 
 # module for storing configuration
 module Conf
-  MSP_API = ENV['MSP_API']
+  API_ENDPOINT_ENV_VAR = 'BG_API_ENDPOINT'
+  API_ENDPOINT = ENV[API_ENDPOINT_ENV_VAR]
+
+  COOKIE_REWRITE_PREFIX = ENV['COOKIE_REWRITE_PREFIX']
 end
 
 # Batch getter
