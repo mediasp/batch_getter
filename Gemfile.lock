@@ -42,7 +42,6 @@ GEM
       rake
       thor
     rack (1.5.2)
-    rack-cookie_rewrite (1.0.0)
     rake (10.3.2)
     rest-client (1.7.2)
       mime-types (>= 1.16, < 3.0)
@@ -63,7 +62,6 @@ DEPENDENCIES
   foreman
   pkgr
   rack
-  rack-cookie_rewrite
   rest-client
   shotgun
   thin

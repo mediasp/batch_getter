@@ -26,10 +26,17 @@ class BatchGetter
   end
 
   def get(path)
-    @site[path].get cookies: @cookies
+    @site[path].get @headers
   rescue RestClient::Exception => e
     # Expects that the server returns JSON error messages.
     e.http_body
+  end
+
+  def headers(env)
+    env.reduce({}) do |m, (k, v)|
+      md = /HTTP_(.*)/.match k
+      md ? m.merge(md[1].downcase.to_sym => v) : m
+    end
   end
 
   def post(env)
@@ -43,7 +50,7 @@ class BatchGetter
   def call(env)
     @request = Rack::Request.new(env)
     @response = Rack::Response.new(env)
-    @cookies = @request.cookies
+    @headers = headers(env)
     if @request.post?
       post(env)
     else
