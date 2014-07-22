@@ -27,14 +27,16 @@ class BatchGetter
 
   def get(path)
     @site[path].get cookies: @cookies
-  rescue
-    nil
+  rescue RestClient::Exception => e
+    # Expects that the server returns JSON error messages.
+    e.http_body
   end
 
   def post(env)
     body = @request.body.read
     json = JSON.parse(body)
-    body = json.map { |path| JSON.parse(get(path)) }.to_json
+    body = json.map { |path| (response = get path) && JSON.parse(response) }
+    .to_json
     response(200, body)
   end
 
