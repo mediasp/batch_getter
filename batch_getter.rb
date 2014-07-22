@@ -39,10 +39,19 @@ class BatchGetter
     end
   end
 
+  def parse_body(body)
+    case body
+    when /^[\[\{]/
+      JSON.parse(body)
+    else
+      JSON.parse("[#{body}]").first
+    end
+  end
+
   def post(env)
     body = @request.body.read
     json = JSON.parse(body)
-    body = json.map { |path| (response = get path) && JSON.parse(response) }
+    body = json.map { |path| (response = get path) && parse_body(response) }
     .to_json
     response(200, body)
   end
