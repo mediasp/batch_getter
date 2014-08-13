@@ -8,7 +8,9 @@ module Conf
   API_ENDPOINT_ENV_VAR = 'BG_API_ENDPOINT'
   API_ENDPOINT = ENV[API_ENDPOINT_ENV_VAR]
 
-  COOKIE_REWRITE_PREFIX = ENV['COOKIE_REWRITE_PREFIX']
+  # If we get one of these error codes, we will fail the whole request,
+  # otherwise we get the error as part of the JSON data.
+  STRICT_FAIL_CODES = (ENV['STRICT_FAIL_CODES'] || '').split(',').map(&:to_i)
 end
 
 # Batch getter
@@ -26,8 +28,9 @@ class BatchGetter
   end
 
   def get(path)
-    @site[path].get @headers
+    @site[path].get @headers.merge(accepts: 'application/json')
   rescue RestClient::Exception => e
+    raise e if  Conf::STRICT_FAIL_CODES.include?(e.http_code)
     # Expects that the server returns JSON error messages.
     e.http_body
   end
@@ -54,6 +57,8 @@ class BatchGetter
     body = json.map { |path| (response = get path) && parse_body(response) }
     .to_json
     response(200, body)
+  rescue RestClient::Exception => e
+    response(e.http_code, e.http_body)
   end
 
   def call(env)
