@@ -24,11 +24,11 @@ class BatchGetter
   end
 
   def error(code = 400, message = '')
-    response(code, { error: code, message: message }.to_json)
+    response(code, { :error => code, :message => message }.to_json)
   end
 
   def get(path)
-    @site[path].get @headers.merge(accepts: 'application/json')
+    @site[path].get @headers.merge(:accepts => 'application/json')
   rescue RestClient::Exception => e
     raise e if  Conf::STRICT_FAIL_CODES.include?(e.http_code)
     # Expects that the server returns JSON error messages.
