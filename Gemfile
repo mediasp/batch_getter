@@ -2,11 +2,14 @@
 
 source 'https://rubygems.org'
 
-ruby '2.1.1'
+ruby '1.9.3'
 
 gem 'rack'
 gem 'rest-client'
-gem 'thin'
+
+platforms :mri do
+  gem 'thin'
+end
 
 group :development do
   gem 'foreman'

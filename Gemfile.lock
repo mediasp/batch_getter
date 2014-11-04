@@ -18,6 +18,7 @@ GEM
     facter (2.1.0)
       CFPropertyList (~> 2.2.6)
     ffi (1.9.3)
+    ffi (1.9.3-java)
     foreman (0.74.0)
       dotenv (~> 0.11.1)
       thor (~> 0.19.1)
@@ -30,6 +31,7 @@ GEM
       ffi
       json (>= 1.7.7)
     json (1.8.1)
+    json (1.8.1-java)
     mime-types (2.3)
     mixlib-log (1.6.0)
     mixlib-shellout (1.4.0)
@@ -55,6 +57,7 @@ GEM
     thor (0.19.1)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
