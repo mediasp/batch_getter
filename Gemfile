@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 
 gem 'rack'
 gem 'rest-client'
+gem 'confuse'
 
 platforms :mri do
   gem 'thin'

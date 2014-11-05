@@ -2,21 +2,32 @@
 
 require 'json'
 require 'rest_client'
+require 'confuse'
 
-# module for storing configuration
-module Conf
-  API_ENDPOINT_ENV_VAR = 'BG_API_ENDPOINT'
-  API_ENDPOINT = ENV[API_ENDPOINT_ENV_VAR]
-
-  # If we get one of these error codes, we will fail the whole request,
-  # otherwise we get the error as part of the JSON data.
-  STRICT_FAIL_CODES = (ENV['STRICT_FAIL_CODES'] || '').split(',').map(&:to_i)
-end
+CONFIG_FILE = if ENV['RACK_ENV'] == 'production'
+                '/etc/batch_getter/config.ini'
+              else
+                ENV['BG_CONFIG_LOCATION']
+              end
 
 # Batch getter
 class BatchGetter
-  def initialize(site)
+  def initialize(site: config.api_endpoint)
     @site = RestClient::Resource.new site
+  end
+
+  def config(location: CONFIG_FILE)
+    @config ||= Confuse.config path: location do |conf|
+      conf.add_item :api_endpoint, description: 'API to batch requests to.',
+                                   type: String
+
+      conf.add_item :strict_fail_codes,
+                    type: Array,
+                    description: 'Fail the whole request if one of these '\
+                                 'error codes is received (otherwise, the '\
+                                 'error message is included in the JSON data).',
+                    default: []
+    end
   end
 
   def response(code, body)
@@ -24,13 +35,13 @@ class BatchGetter
   end
 
   def error(code = 400, message = '')
-    response(code, { :error => code, :message => message }.to_json)
+    response(code, { error: code, message: message }.to_json)
   end
 
   def get(path)
-    @site[path].get @headers.merge(:accepts => 'application/json')
+    @site[path].get @headers.merge(accepts: 'application/json')
   rescue RestClient::Exception => e
-    raise e if  Conf::STRICT_FAIL_CODES.include?(e.http_code)
+    raise e if  config.strict_fail_codes.include?(e.http_code)
     # Expects that the server returns JSON error messages.
     e.http_body
   end
