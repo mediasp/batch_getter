@@ -1,5 +1,8 @@
-This is a small prototype to see if batching GET requests to a json API can
-give us any speed increases.
+This is a small rack application for batching GET requests to a json API, and
+returning them in a single JSON string.
+
+Development
+-----------
 
 To start the server:
 
@@ -20,3 +23,17 @@ point, or some clever trickery on the client to send the correct cookie.
 It currently does very little error checking of the data sent in, so bad things
 might happen if you send it some json that isn't a list of URLs, and if any of
 those URLs return data that isn't in the JSON format.
+
+Deployment
+----------
+
+This can easily be deployed as a war using Warbler. The warbler gem is included
+so that it doesn't need to be installed to your global gems.
+
+    bundle install
+    bundle exec warble
+
+This will create a batch\_getter.war file that can be deployed using your
+application server of choice.
+
+Deployment under MRI is left as an exercise for the reader.

@@ -8,3 +8,7 @@ gem 'rest-client'
 platforms :mri do
   gem 'thin'
 end
+
+group :development do
+  gem 'warbler'
+end
