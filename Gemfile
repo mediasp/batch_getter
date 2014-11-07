@@ -17,6 +17,7 @@ end
 
 group :test do
   gem 'vcr'
+  gem 'webmock'
   gem 'guard'
   gem 'guard-minitest'
   gem 'guard-rubocop'
