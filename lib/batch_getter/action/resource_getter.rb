@@ -18,7 +18,8 @@ module BatchGetter
       end
 
       def call
-        response = RestClient.get(@uri, @headers)
+        headers = @headers.merge(cookies: @cookie_jar.cookies)
+        response = RestClient.get(@uri, headers)
         parse_headers(response.headers)
         JSON.parse(response.join)
       rescue RestClient::Exception => error

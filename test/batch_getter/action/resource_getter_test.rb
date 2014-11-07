@@ -8,9 +8,14 @@ describe BatchGetter::Action::ResourceGetter do
   let(:body) { %w({"foo": "bar", "bar": "baz"}) }
   let(:status) { 200 }
   let(:strict_error_codes) { [] }
-  let(:cookie_jar) { mock }
   let(:response_headers) { {} }
   let(:headers) { {} }
+
+  let(:cookie_jar) do
+    mock.tap do |cookie_jar|
+      cookie_jar.stubs(:cookies).returns([])
+    end
+  end
 
   subject do
     BatchGetter::Action::ResourceGetter.new(headers, cookie_jar,
@@ -26,6 +31,22 @@ describe BatchGetter::Action::ResourceGetter do
         response = subject.call
         assert_equal 'bar', response['foo']
         assert_equal 'baz', response['bar']
+      end
+    end
+
+    describe 'cookie in the cookie jar' do
+      let(:cookie_jar) do
+        mock.tap do |cookie_jar|
+          cookie_jar.expects(:cookies).returns({'foo' => '1'})
+        end
+      end
+
+      it 'uses cookies from the cookie_jar in the headers' do
+        stub_request(:get, uri)
+          .with(headers: { cookie: 'foo=1' })
+          .to_return(body: body, status: status, headers: response_headers)
+
+        subject.call
       end
     end
 
