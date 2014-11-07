@@ -8,17 +8,34 @@ module BatchGetter
       class Error < StandardError
       end
 
-      def initialize(uri, strict_error_codes: [])
+      def initialize(cookie_jar, uri, strict_error_codes: [])
+        # FIXME: can we do this without the shared state of cookie_jar?
+        # perhaps call returns the headers as well as the body?
+        @cookie_jar = cookie_jar
         @uri = uri
         @strict_error_codes = strict_error_codes
       end
 
       def call
-        JSON.parse(RestClient.get(@uri).join)
-      rescue => error
+        response = RestClient.get(@uri)
+        parse_headers(response.headers)
+        JSON.parse(response.join)
+      rescue RestClient::Exception => error
+        error_response(error)
+      end
+
+      private
+
+      # FIXME: Does this break single-responsibility principle?
+      # Maybe should be in its own action.
+      def parse_headers(headers)
+        (cookie = headers[:set_cookie]) && @cookie_jar.set_cookie(cookie)
+      end
+
+      def error_response(error)
         status = error.http_code
         if @strict_error_codes.include? status
-          raise Error
+          fail Error
         else
           { 'status' => status,
             'message' => error.http_body }
