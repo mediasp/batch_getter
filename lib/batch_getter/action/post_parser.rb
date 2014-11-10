@@ -4,6 +4,7 @@ module BatchGetter
   module Action
     # Parses a post request and returns a list of URLs
     class PostParser
+      # Post parser error
       class Error < StandardError
       end
 

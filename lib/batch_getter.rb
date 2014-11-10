@@ -1,8 +1,12 @@
 # coding: utf-8
 
 require 'json'
-require 'rest_client'
 require 'confuse'
+
+require 'action/post_parser'
+require 'action/resource_getter'
+require 'action/resources_getter'
+require 'action/response_creator'
 
 CONFIG_FILE = if ENV['RACK_ENV'] == 'production'
                 '/etc/batch_getter/config.ini'
@@ -11,77 +15,56 @@ CONFIG_FILE = if ENV['RACK_ENV'] == 'production'
               end
 
 # Batch getter
-class BatchGetter
-  def initialize(site: config.api_endpoint)
-    @site = RestClient::Resource.new site
-  end
-
+module BatchGetter
   def config(location: CONFIG_FILE)
     @config ||= Confuse.config path: location do |conf|
       conf.add_item :api_endpoint, description: 'API to batch requests to.',
                                    type: String
 
       conf.add_item :strict_fail_codes,
-                    type: Array,
+                    default: [], type: Array,
                     description: 'Fail the whole request if one of these '\
-                                 'error codes is received (otherwise, the '\
-                                 'error message is included in the JSON data).',
-                    default: []
+                    'error codes is received (otherwise, the '\
+                    'error message is included in the JSON data)'
     end
   end
 
-  def response(code, body)
-    [code, { 'Content-Type' => 'application/json' }, Array(body)]
-  end
-
-  def error(code = 400, message = '')
-    response(code, { error: code, message: message }.to_json)
-  end
-
-  def get(path)
-    @site[path].get @headers.merge(accepts: 'application/json')
-  rescue RestClient::Exception => e
-    raise e if  config.strict_fail_codes.include?(e.http_code)
-    # Expects that the server returns JSON error messages.
-    e.http_body
-  end
-
-  def headers(env)
-    env.reduce({}) do |m, (k, v)|
-      md = /HTTP_(.*)/.match k
-      md ? m.merge(md[1].downcase.to_sym => v) : m
+  class << self
+    def call(env)
+      handle_request(env)
+    rescue => error
+      [500, { 'Content-Type' => 'application/json' },
+       Array({ error: 500, message: error }.to_json)]
     end
-  end
 
-  def parse_body(body)
-    case body
-    when /^[\[\{]/
-      JSON.parse(body)
-    else
-      JSON.parse("[#{body}]").first
+    private
+
+    def post_parser
+      proc { |data| Action::PostParser.new(config.api_endpoint, data).call }
     end
-  end
 
-  def post(env)
-    body = @request.body.read
-    json = JSON.parse(body)
-    body = json.map { |path| (response = get path) && parse_body(response) }
-    .to_json
-    response(200, body)
-  rescue RestClient::Exception => e
-    response(e.http_code, e.http_body)
-  end
-
-  def call(env)
-    @request = Rack::Request.new(env)
-    @response = Rack::Response.new(env)
-    @headers = headers(env)
-    if @request.post?
-      post(env)
-    else
-      error(405, 'expects POST')
+    def resource_getter(headers)
+      proc do |uri|
+        Action::ResourceGetter.new(headers, cookie_jar, uri,
+                                   strict_error_codes: config.strict_fail_codes)
+          .call
+      end
     end
-  rescue => e
-    error(500, e)
+
+    def resources_getter(headers, uris)
+      Action::ResourcesGetter.new(resource_getter(headers), uris)
+    end
+
+    def resonse_creator(body)
+      Action::ResponseCreator.new(cookie_jar, body)
+    end
+
+    def handle_request(env)
+      request = Rack::Request.new(env)
+      uris = post_parser.call(request.body.read)
+      resources_getter = resource_getter(request.headers, uris)
+      body = resources_getter.call
+      response_creator(body).call
+    end
   end
 end
