@@ -8,8 +8,7 @@ module BatchGetter
       class Error < StandardError
       end
 
-      def initialize(base, data)
-        @base = base
+      def initialize(data)
         @data = JSON.parse(data)
       rescue
         raise Error
@@ -17,7 +16,7 @@ module BatchGetter
 
       def call
         fail Error if @data.respond_to? :keys
-        @data.map { |path| File.join(@base, path) }
+        @data
       end
     end
   end

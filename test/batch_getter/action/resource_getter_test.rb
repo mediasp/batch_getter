@@ -4,29 +4,24 @@ require 'webmock/minitest'
 require 'mocha/mini_test'
 
 describe BatchGetter::Action::ResourceGetter do
-  let(:uri) { 'www.example.com' }
+  let(:base) { 'www.example.com' }
+  let(:path) { 'foo' }
+  let(:rest_client) { RestClient::Resource.new(base) }
   let(:body) { %w({"foo": "bar", "bar": "baz"}) }
   let(:status) { 200 }
   let(:strict_error_codes) { [] }
   let(:response_headers) { {} }
   let(:headers) { {} }
 
-  let(:cookie_jar) do
-    mock.tap do |cookie_jar|
-      cookie_jar.stubs(:cookies).returns([])
-    end
-  end
-
   subject do
-    BatchGetter::Action::ResourceGetter.new(headers, cookie_jar,
-                                            "http://#{uri}/",
+    BatchGetter::Action::ResourceGetter.new(path, headers, rest_client,
                                             strict_error_codes: strict_error_codes)
   end
 
   describe '#call' do
     describe 'URL returns JSON' do
       it 'returns the data as a JSON object' do
-        stub_request(:get, uri)
+        stub_request(:get, base + '/' + path)
           .to_return(body: body, status: status, headers: response_headers)
         response = subject.call
         assert_equal 'bar', response['foo']
@@ -34,27 +29,11 @@ describe BatchGetter::Action::ResourceGetter do
       end
     end
 
-    describe 'cookie in the cookie jar' do
-      let(:cookie_jar) do
-        mock.tap do |cookie_jar|
-          cookie_jar.expects(:cookies).returns({'foo' => '1'})
-        end
-      end
-
-      it 'uses cookies from the cookie_jar in the headers' do
-        stub_request(:get, uri)
-          .with(headers: { cookie: 'foo=1' })
-          .to_return(body: body, status: status, headers: response_headers)
-
-        subject.call
-      end
-    end
-
     describe 'with headers' do
       let(:headers) { { 'X-Foo' => 'Foo' } }
 
       it 'should pass headers on to request' do
-        stub_request(:get, uri)
+        stub_request(:get, base + '/' + path)
           .with(headers: headers)
           .to_return(body: body, status: status, headers: response_headers)
 
@@ -66,7 +45,7 @@ describe BatchGetter::Action::ResourceGetter do
       let(:status) { 401 }
       let(:body) { 'please log in' }
       before do
-        stub_request(:get, uri)
+        stub_request(:get, base + '/' + path)
           .to_return(body: body, status: status, headers: response_headers)
       end
 
@@ -85,21 +64,6 @@ describe BatchGetter::Action::ResourceGetter do
             subject.call
           end
         end
-      end
-    end
-
-    describe 'URL returns set-cookie' do
-      let(:response_headers) { { 'Set-Cookie' => 'foo' } }
-
-      it 'puts a cookie in the cookie jar' do
-        stub_request(:get, uri)
-          .to_return(body: body, status: status, headers: response_headers)
-
-        # FIXME: Mocking things probably means these things are too tightly
-        # coupled.
-        cookie_jar.expects(:cookie=).with(['foo'])
-
-        subject.call
       end
     end
   end

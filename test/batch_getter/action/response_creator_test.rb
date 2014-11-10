@@ -1,28 +1,51 @@
 require 'test_helper'
 require 'batch_getter/action/response_creator'
-require 'mocha/mini_test'
 
 describe BatchGetter::Action::ResponseCreator do
   describe '#call' do
-    let(:cookie_jar) do
-      mock.tap do |cookie_jar|
-        cookie_jar.expects(:cookie_string).returns('foo=1')
+    let(:cookie) { '' }
+    let(:body) { [ { foo: 1 }, { bar: 2 } ] }
+
+    subject do
+      BatchGetter::Action::ResponseCreator.new(body, cookie).call
+    end
+
+    describe 'no cookie' do
+      it 'has a 200 response code' do
+        assert_equal 200, subject.first
+      end
+
+      it 'sends set-cookie header' do
+        refute_includes subject[1], 'Set-Cookie'
+      end
+
+      it 'sends content-type header' do
+        assert_equal 'application/json', subject[1]['Content-Type']
+      end
+
+      it 'sends back the body' do
+        assert_equal [body.to_json], subject.last
       end
     end
 
-    let(:body) do
-      [ { foo: 1 }, { bar: 2 } ]
-    end
+    describe 'with set-cookie' do
+      let(:cookie) { 'foo=1;bar=1' }
 
-    subject do
-      BatchGetter::Action::ResponseCreator.new(cookie_jar, body)
-    end
+      it 'has a 200 response code' do
+        assert_equal 200, subject.first
+      end
 
-    it 'returns a rack compatible response' do
-      response = subject.call
+      it 'sends set-cookie header' do
+        assert_equal cookie, subject[1]['Set-Cookie']
+      end
 
-      assert_equal 200, response.first
-      assert_equal [body.to_json], response.last
+      it 'sends content-type header' do
+        assert_equal 'application/json', subject[1]['Content-Type']
+      end
+
+      it 'sends back the body' do
+        assert_equal [body.to_json], subject.last
+      end
     end
   end
 end

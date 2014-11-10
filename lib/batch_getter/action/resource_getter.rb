@@ -8,19 +8,17 @@ module BatchGetter
       class Error < StandardError
       end
 
-      def initialize(headers, cookie_jar, uri, strict_error_codes: [])
+      def initialize(path, headers, rest_client, strict_error_codes: [])
         # FIXME: can we do this without the shared state of cookie_jar?
         # perhaps call returns the headers as well as the body?
-        @cookie_jar = cookie_jar
+        @rest_client = rest_client
         @headers = headers
-        @uri = uri
+        @path = path
         @strict_error_codes = strict_error_codes
       end
 
       def call
-        headers = @headers.merge(cookies: @cookie_jar.cookies)
-        response = RestClient.get(@uri, headers)
-        parse_headers(response.headers)
+        response = @rest_client[@path].get @headers
         JSON.parse(response.join)
       rescue RestClient::Exception => error
         error_response(error)
