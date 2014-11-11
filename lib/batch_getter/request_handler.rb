@@ -10,7 +10,14 @@ module BatchGetter
     def initialize(config, env)
       @request = Rack::Request.new(env)
       @config = config
-      @headers = env.select { |key, _value| /^HTTP_/.match(key) }
+
+      @headers =
+        env
+        .select { |key, _value| /^HTTP_/.match(key) }
+        .each_with_object({}) do |(key, val), obj|
+          obj[key.sub(/^HTTP_/, '')] =  val
+        end
+
       @rest_client = RestClient::Resource.new(@config.api_endpoint)
     end
 

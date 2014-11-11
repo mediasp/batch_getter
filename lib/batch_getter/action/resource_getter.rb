@@ -14,8 +14,6 @@ module BatchGetter
       end
 
       def initialize(path, headers, rest_client, strict_error_codes: [])
-        # FIXME: can we do this without the shared state of cookie_jar?
-        # perhaps call returns the headers as well as the body?
         @rest_client = rest_client
         @headers = headers
         @path = path
@@ -34,7 +32,7 @@ module BatchGetter
 
       def error_response(error)
         status = error.http_code
-        if @strict_error_codes.map { |code| code.to_i }.include? status
+        if @strict_error_codes.map(&:to_i).include? status
           fail Error, status
         else
           { 'status' => status,

@@ -17,10 +17,9 @@ module BatchGetter
     def call(env)
       RequestHandler.new(config, env).call
     rescue Action::ResourceGetter::Error => error
-      [error.status, { 'Content-Type' => 'application/json' }, %w()]
-    rescue => error
-      [500, { 'Content-Type' => 'application/json' },
-       Array({ error: 500, message: error }.to_json)]
+      status = error.status
+      [status, { 'Content-Type' => 'application/json' },
+       [{ code: status, message: "Received #{status} from backend" }.to_json]]
     end
 
     private

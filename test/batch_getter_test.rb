@@ -103,6 +103,14 @@ describe BatchGetter do
       last_response.body)
   end
 
+  it 'should pass through all headers from the incoming request' do
+    stub_request(:get, 'www.example.com/foo')
+      .with(headers: { 'X-Foo' => 'foo' })
+      .to_return(body: { foo: :foo }.to_json)
+
+    post('/', ['foo'].to_json, 'HTTP_X_FOO' => 'foo')
+  end
+
   describe 'strict fail codes' do
     let(:strict_fail_codes) { [401] }
 
