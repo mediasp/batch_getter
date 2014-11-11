@@ -30,10 +30,14 @@ or
 Tests
 =====
 
-TODO
+You can run the tests with
 
-Manually tested against a proprietry API. Need to create some tests, and a mock
-REST API to run some tests against.
+    bundle exec rake test
+
+There is also a Guardfile that you can use to run the tests continuously as you
+edit:
+
+    bundle exec rake test
 
 Usage
 =====
@@ -115,6 +119,7 @@ Deployment under MRI is left as an exercise for the reader.
 Bugs
 ====
 
-Probably.
+There may be issues with multiple cookies being sent back. I need to look into
+this a bit more.
 
-Please create an issue if you find one.
+There are probably others. Please create an issue if you find one.
