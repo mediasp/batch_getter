@@ -18,6 +18,7 @@ end
 group :test do
   gem 'webmock'
   gem 'mocha'
+  gem 'rack-test'
   gem 'guard'
   gem 'guard-minitest'
   gem 'guard-rubocop'

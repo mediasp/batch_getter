@@ -15,12 +15,52 @@ describe BatchGetter::Action::ResourcesGetter do
     let(:bar) { { 'bar' => 2 } }
 
     it 'returns the json from each uri in an array' do
-      resource_getter.expects(:call).with('foo').returns(foo)
-      resource_getter.expects(:call).with('bar').returns(bar)
-      response = subject.call
+      resource_getter.expects(:call).with('foo').returns([foo, {}])
+      resource_getter.expects(:call).with('bar').returns([bar, {}])
+      body, _cookies = subject.call
 
-      assert_same foo, response.first
-      assert_same bar, response.last
+      assert_same foo, body.first
+      assert_same bar, body.last
+    end
+
+    it 'sends back cookies from the last request' do
+      resource_getter.expects(:call).with('foo').returns([foo, {}])
+      resource_getter.expects(:call).with('bar')
+        .returns([bar, { 'foo' => 'foo' }])
+      body, cookies = subject.call
+
+      assert_same foo, body.first
+      assert_same bar, body.last
+
+      assert_equal({ 'foo' => 'foo' }, cookies)
+    end
+
+    it 'combines cookies from all requests' do
+      resource_getter.expects(:call).with('foo')
+        .returns([foo, { 'foo' => 'foo' }])
+
+      resource_getter.expects(:call).with('bar')
+        .returns([bar, { 'bar' => 'bar' }])
+      body, cookies = subject.call
+
+      assert_same foo, body.first
+      assert_same bar, body.last
+
+      assert_equal({ 'foo' => 'foo', 'bar' => 'bar' }, cookies)
+    end
+
+    it 'last response over-rides previously set cookies' do
+      resource_getter.expects(:call).with('foo')
+        .returns([foo, { 'foo' => 'foo' }])
+
+      resource_getter.expects(:call).with('bar')
+        .returns([bar, { 'foo' => 'bar' }])
+      body, cookies = subject.call
+
+      assert_same foo, body.first
+      assert_same bar, body.last
+
+      assert_equal({ 'foo' => 'bar' }, cookies)
     end
   end
 end

@@ -19,18 +19,13 @@ module BatchGetter
 
       def call
         response = @rest_client[@path].get @headers
-        JSON.parse(response.join)
+        cookies = response.cookies
+        [JSON.parse(response), cookies]
       rescue RestClient::Exception => error
-        error_response(error)
+        [error_response(error), '']
       end
 
       private
-
-      # FIXME: Does this break single-responsibility principle?
-      # Maybe should be in its own action.
-      def parse_headers(headers)
-        (cookie = headers[:set_cookie]) && @cookie_jar.cookie = cookie
-      end
 
       def error_response(error)
         status = error.http_code

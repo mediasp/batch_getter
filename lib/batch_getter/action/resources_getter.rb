@@ -8,7 +8,11 @@ module BatchGetter
       end
 
       def call
-        @uris.map { |uri| @resource_getter.call(uri) }
+        @uris.each_with_object([[], {}]) do |uri, (bodies, cookies)|
+          body, cookie = @resource_getter.call(uri)
+          cookies.merge!(cookie)
+          bodies << body
+        end
       end
     end
   end

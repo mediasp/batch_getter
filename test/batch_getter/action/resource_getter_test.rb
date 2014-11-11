@@ -7,7 +7,7 @@ describe BatchGetter::Action::ResourceGetter do
   let(:base) { 'www.example.com' }
   let(:path) { 'foo' }
   let(:rest_client) { RestClient::Resource.new(base) }
-  let(:body) { %w({"foo": "bar", "bar": "baz"}) }
+  let(:body) { %q({"foo": "bar", "bar": "baz"}) }
   let(:status) { 200 }
   let(:strict_error_codes) { [] }
   let(:response_headers) { {} }
@@ -23,9 +23,24 @@ describe BatchGetter::Action::ResourceGetter do
       it 'returns the data as a JSON object' do
         stub_request(:get, base + '/' + path)
           .to_return(body: body, status: status, headers: response_headers)
-        response = subject.call
-        assert_equal 'bar', response['foo']
-        assert_equal 'baz', response['bar']
+        body, cookies = subject.call
+        assert_equal 'bar', body['foo']
+        assert_equal 'baz', body['bar']
+        assert_equal({}, cookies)
+      end
+    end
+
+    describe 'URL sets a cookie' do
+      let(:response_headers) { { set_cookie: %w(foo=foo) } }
+
+      it 'returns the set-cookie header' do
+        stub_request(:get, base + '/' + path)
+          .to_return(body: body, status: status, headers: response_headers)
+
+        body, cookies = subject.call
+        assert_equal 'bar', body['foo']
+        assert_equal 'baz', body['bar']
+        assert_equal({ 'foo' => 'foo' }, cookies)
       end
     end
 
@@ -50,10 +65,10 @@ describe BatchGetter::Action::ResourceGetter do
       end
 
       it 'returns the error as a JSON string' do
-        response = subject.call
+        body, _cookies = subject.call
 
-        assert_equal 401, response['status']
-        assert_equal 'please log in', response['message']
+        assert_equal 401, body['status']
+        assert_equal 'please log in', body['message']
       end
 
       describe 'strict error codes' do
