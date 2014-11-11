@@ -15,10 +15,12 @@ CONFIG_FILE = if ENV['RACK_ENV'] == 'production'
 module BatchGetter
   class << self
     def call(env)
-      RequestHandler.new(config.api_endpoint, env).call
-      rescue => error
-        [500, { 'Content-Type' => 'application/json' },
-         Array({ error: 500, message: error }.to_json)]
+      RequestHandler.new(config, env).call
+    rescue Action::ResourceGetter::Error => error
+      [error.status, { 'Content-Type' => 'application/json' }, %w()]
+    rescue => error
+      [500, { 'Content-Type' => 'application/json' },
+       Array({ error: 500, message: error }.to_json)]
     end
 
     private

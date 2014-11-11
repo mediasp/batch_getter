@@ -7,10 +7,11 @@ require 'batch_getter/action/cookie_parser'
 module BatchGetter
   # request handler
   class RequestHandler
-    def initialize(api, env)
+    def initialize(config, env)
       @request = Rack::Request.new(env)
+      @config = config
       @headers = env.select { |key, _value| /^HTTP_/.match(key) }
-      @rest_client = RestClient::Resource.new(api)
+      @rest_client = RestClient::Resource.new(@config.api_endpoint)
     end
 
     def call
@@ -25,7 +26,9 @@ module BatchGetter
 
     def resource_getter
       @resource_getter ||= proc do |path|
-        Action::ResourceGetter.new(path, @headers, @rest_client).call
+        Action::ResourceGetter.new(
+          path, @headers, @rest_client,
+          strict_error_codes: @config.strict_fail_codes).call
       end
     end
   end

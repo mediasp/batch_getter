@@ -6,6 +6,11 @@ module BatchGetter
     class ResourceGetter
       # resource getter error
       class Error < StandardError
+        def initialize(status)
+          @status = status
+        end
+
+        attr_reader :status
       end
 
       def initialize(path, headers, rest_client, strict_error_codes: [])
@@ -30,7 +35,7 @@ module BatchGetter
       def error_response(error)
         status = error.http_code
         if @strict_error_codes.include? status
-          fail Error
+          fail Error, status
         else
           { 'status' => status,
             'message' => error.http_body }

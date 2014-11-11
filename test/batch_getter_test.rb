@@ -11,9 +11,12 @@ describe BatchGetter do
     BatchGetter
   end
 
+  let(:strict_fail_codes) { [] }
+
   let(:config) do
     mock.tap do |conf|
       conf.stubs(:api_endpoint).returns('www.example.com')
+      conf.stubs(:strict_fail_codes).returns(strict_fail_codes)
     end
   end
 
@@ -84,5 +87,35 @@ describe BatchGetter do
     post('/', ['foo', 'bar'].to_json)
 
     assert_equal 'bar', rack_mock_session.cookie_jar['foo']
+  end
+
+  it 'returns the error response as part of the body' do
+    stub_request(:get, 'www.example.com/foo')
+      .to_return(body: { foo: :foo }.to_json,
+                 headers: { set_cookie: %w(foo=foo) })
+    stub_request(:get, 'www.example.com/bar')
+      .to_return(status: 401, body: 'unauthorised')
+
+    post('/', ['foo', 'bar'].to_json)
+
+    assert_equal(
+      [ {foo: :foo}, { status: 401, message: :unauthorised } ].to_json,
+      last_response.body)
+  end
+
+  describe 'strict fail codes' do
+    let(:strict_fail_codes) { [401] }
+
+    it 'fails if a request returns an error that is configured to fail fast' do
+      stub_request(:get, 'www.example.com/foo')
+        .to_return(body: { foo: :foo }.to_json,
+                   headers: { set_cookie: %w(foo=foo) })
+      stub_request(:get, 'www.example.com/bar')
+        .to_return(status: 401, body: 'unauthorised')
+
+      post('/', ['foo', 'bar'].to_json)
+
+      assert_equal 401, last_response.status
+    end
   end
 end

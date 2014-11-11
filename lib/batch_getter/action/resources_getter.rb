@@ -10,7 +10,7 @@ module BatchGetter
       def call
         @uris.each_with_object([[], {}]) do |uri, (bodies, cookies)|
           body, cookie = @resource_getter.call(uri)
-          cookies.merge!(cookie)
+          cookies.merge!(cookie) unless cookie == ''
           bodies << body
         end
       end
