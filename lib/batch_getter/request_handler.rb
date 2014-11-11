@@ -2,6 +2,7 @@ require 'batch_getter/action/post_parser'
 require 'batch_getter/action/resource_getter'
 require 'batch_getter/action/resources_getter'
 require 'batch_getter/action/response_creator'
+require 'batch_getter/action/cookie_parser'
 
 module BatchGetter
   # request handler
@@ -16,7 +17,7 @@ module BatchGetter
       paths = Action::PostParser.new(@request.body.read).call
       resources_getter = Action::ResourcesGetter.new(resource_getter, paths)
       body, cookies = resources_getter.call
-      cookies = parse_cookies(cookies)
+      cookies = Action::CookieParser.new(cookies).call
       Action::ResponseCreator.new(body, cookies).call
     end
 
@@ -26,10 +27,6 @@ module BatchGetter
       @resource_getter ||= proc do |path|
         Action::ResourceGetter.new(path, @headers, @rest_client).call
       end
-    end
-
-    def parse_cookies(cookies)
-      cookies.map { |cookie| cookie.join('=') }
     end
   end
 end
