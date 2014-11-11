@@ -8,7 +8,7 @@ module BatchGetter
       end
 
       def call
-        @cookies.map { |cookie| cookie.join('=') }
+        @cookies.map { |cookie| cookie.join('=') }.join('; ')
       end
     end
   end

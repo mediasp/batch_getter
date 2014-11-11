@@ -18,6 +18,8 @@ end
 group :test do
   gem 'webmock'
   gem 'mocha'
+  gem 'pry'
+  gem 'pry-byebug'
   gem 'rack-test'
   gem 'guard'
   gem 'guard-minitest'

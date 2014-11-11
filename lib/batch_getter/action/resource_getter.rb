@@ -34,7 +34,7 @@ module BatchGetter
 
       def error_response(error)
         status = error.http_code
-        if @strict_error_codes.include? status
+        if @strict_error_codes.map { |code| code.to_i }.include? status
           fail Error, status
         else
           { 'status' => status,
