@@ -23,7 +23,7 @@ module BatchGetter
       def call
         response = @rest_client[@path].get @headers
         cookies = response.cookies
-        [JSON.parse(response), cookies]
+        [parse_json(response), cookies]
       rescue RestClient::Exception => error
         [error_response(error), '']
       end
@@ -37,6 +37,15 @@ module BatchGetter
         else
           { 'status' => status,
             'message' => error.http_body }
+        end
+      end
+
+      def parse_json(data)
+        case data
+        when /^[\[\{]/
+          JSON.parse(data)
+        else
+          JSON.parse("[#{data}]").first
         end
       end
     end
