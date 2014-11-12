@@ -3,6 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'rack'
+gem 'rack-cookie_rewrite'
 gem 'rest-client'
 gem 'confuse'
 
