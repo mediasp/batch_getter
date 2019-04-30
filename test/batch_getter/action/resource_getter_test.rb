@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'batch_getter/action/resource_getter'
 require 'webmock/minitest'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 
 describe BatchGetter::Action::ResourceGetter do
   let(:base) { 'www.example.com' }

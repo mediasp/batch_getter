@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'rack/test'
 require 'webmock/minitest'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 require 'batch_getter'
 
 describe BatchGetter do

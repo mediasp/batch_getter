@@ -1,6 +1,6 @@
 require 'test_helper'
 require 'batch_getter/action/resources_getter'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 
 describe BatchGetter::Action::ResourcesGetter do
   let(:resource_getter) { mock }
